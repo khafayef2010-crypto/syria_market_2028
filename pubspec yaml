@@ -1,0 +1,54 @@
+name: souq_syria_market
+description: "تطبيق سوق سوريا الشامل 2028 للتجارة والإعلانات والمتاجر مع ربط Supabase والتخزين السحابي"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.13.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # اتصال وإدارة البيانات السحابية
+  supabase_flutter: ^2.8.0
+
+  # مكتبات Firebase للتوثيق والربط
+  firebase_core: ^3.12.0
+  firebase_auth: ^5.4.1
+
+  # أدوات مساعدة واختيار الصور والملفات والأذونات
+  image_picker: ^1.1.2
+  url_launcher: ^6.3.0
+  permission_handler: ^11.3.1
+  intl: ^0.19.0
+  shared_preferences: ^2.3.2
+
+  # أيقونات وتصميم
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logo.png"
+  min_sdk_android: 21
+
+flutter:
+  uses-material-design: true
+
+  # في حال استخدام خط Cairo المحلي أو تفعيله عبر النظام
+  # fonts:
+  #   - family: Cairo
+  #     fonts:
+  #       - asset: assets/fonts/Cairo-Regular.ttf
+  #       - asset: assets/fonts/Cairo-Bold.ttf
+  #         weight: 700

@@ -1,0 +1,169 @@
+/**
+ * ==============================================================================
+ * 🇸🇾 سوق سوريا الشامل 2028 - بوت أتمتة واستخراج أسعار الصرف من تيليجرام إلى Supabase
+ * Telegram Bot: @SouqSyria2026_bot
+ * Source Channel: ALSRAFEN (قناة الصرافين)
+ * Engine: Node.js + Telegram Bot API + Tesseract OCR + Supabase Client
+ * ==============================================================================
+ */
+
+const TelegramBot = require('node-telegram-bot-api');
+const { createClient } = require('@supabase/supabase-js');
+const { createWorker } = require('tesseract.js');
+
+// 1. المفاتيح والروابط الرسمية المعتمدة لمنظومة سوق سوريا الشامل
+const token = '8294009695:AAGbMTMRtwyJgyPrgXfPKbM5X7FMKXKejSc';
+const supabaseUrl = 'https://zbjjkigkxbpktpmpcdqc.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpiampraWdreGJwa3RwbXBjZHFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNjY3NjAsImV4cCI6MjA1NTk0Mjc2MH0.kM6i-E4d-Ea938j-e7KqE-3jM4K_Z5n6J-6O4L_2p5A';
+
+// تهيئة عميل البوت وقاعدة بيانات Supabase
+const bot = new TelegramBot(token, { polling: true });
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+console.log('================================================================');
+console.log('🚀 البوت @SouqSyria2026_bot يعمل الآن بنجاح ويراقب النشرات 24/7...');
+console.log('📡 قاعدة البيانات Supabase: ' + supabaseUrl);
+console.log('================================================================');
+
+/**
+ * دالة ذكية لمعالجة النص المستخرج بالـ OCR وتحليله إلى أرقام شراء ومبيع
+ */
+function parseRates(text) {
+    const clean = text.replace(/,/g, '').replace(/،/g, '');
+    const rates = [];
+
+    // البحث عن أرقام الدولار (مثال: 15150 - 15250 أو 15200)
+    const dollarMatches = clean.match(/(\d{5})/g);
+    if (dollarMatches && dollarMatches.length >= 1) {
+        const p1 = parseFloat(dollarMatches[0]);
+        const p2 = dollarMatches.length > 1 ? parseFloat(dollarMatches[1]) : p1 + 100;
+        rates.push({
+            currency_name: 'USD (دولار أمريكي)',
+            buy_price: Math.min(p1, p2),
+            sell_price: Math.max(p1, p2)
+        });
+    }
+
+    // البحث عن سعر غرام الذهب عيار 21 (بين 700,000 و 2,500,000)
+    const goldMatches = clean.match(/(\d{6,7})/g);
+    if (goldMatches) {
+        for (const num of goldMatches) {
+            const val = parseFloat(num);
+            if (val >= 700000 && val <= 2500000) {
+                rates.push({
+                    currency_name: 'غرام الذهب عيار 21',
+                    buy_price: val - 15000,
+                    sell_price: val
+                });
+                break;
+            }
+        }
+    }
+
+    return rates;
+}
+
+/**
+ * 2. استلام ومعالجة الصور القادمة للبوت أو المعاد توجيهها من القناة
+ */
+bot.on('photo', async (msg) => {
+    const chatId = msg.chat.id;
+    try {
+        console.log(`📸 [${new Date().toLocaleTimeString('ar-SY')}] تم استلام صورة نشرة جديدة من: ${chatId}`);
+        bot.sendMessage(chatId, '⏳ جاري استلام الصورة وتحليل أرقام الأسعار عبر محرك OCR الذكي...');
+
+        // اختيار الصورة بأعلى دقة متوفرة
+        const photo = msg.photo[msg.photo.length - 1];
+        const fileLink = await bot.getFileLink(photo.file_id);
+        console.log(`🔗 رابط ملف الصورة: ${fileLink}`);
+
+        // قراءة النصوص والأرقام عبر Tesseract OCR (دعم اللغتين العربية والإنجليزية)
+        const worker = await createWorker('ara+eng');
+        const ret = await worker.recognize(fileLink);
+        const extractedText = ret.data.text;
+        await worker.terminate();
+
+        console.log('📝 النص المستخرج من الصورة:\n' + extractedText);
+
+        // استخراج وتنسيق أسعار الصرف والذهب
+        const parsedRates = parseRates(extractedText);
+        const rowsToInsert = [];
+
+        if (parsedRates.length > 0) {
+            for (const r of parsedRates) {
+                rowsToInsert.push({
+                    currency_name: r.currency_name,
+                    buy_price: r.buy_price,
+                    sell_price: r.sell_price,
+                    raw_text: extractedText,
+                    image_url: fileLink
+                });
+            }
+        } else {
+            rowsToInsert.push({
+                currency_name: 'نشرة عامة (ALSRAFEN)',
+                buy_price: null,
+                sell_price: null,
+                raw_text: extractedText,
+                image_url: fileLink
+            });
+        }
+
+        // حفظ وتحديث البيانات في جدول exchange_rates في Supabase
+        const { data, error } = await supabase
+            .from('exchange_rates')
+            .insert(rowsToInsert)
+            .select();
+
+        if (error) {
+            console.error('❌ خطأ أثناء الإدخال في Supabase:', error.message);
+            throw error;
+        }
+
+        let responseMsg = '✅ تم قراءة النشرة وتحديث أسعار الصرف في التطبيق بنجاح!\n\n';
+        if (parsedRates.length > 0) {
+            parsedRates.forEach(r => {
+                responseMsg += `💵 ${r.currency_name}: شراء ${r.buy_price?.toLocaleString()} | مبيع ${r.sell_price?.toLocaleString()} ل.س\n`;
+            });
+        }
+        responseMsg += '\n🇸🇾 تظهر الآن في شريط بورصة التطبيق للمستخدمين فوراً.';
+
+        bot.sendMessage(chatId, responseMsg);
+        console.log('✅ تم تحديث ونشر الأسعار في Supabase بنجاح!');
+
+    } catch (err) {
+        console.error('❌ حدث خطأ أثناء المعالجة:', err);
+        bot.sendMessage(chatId, `⚠️ تعذر إتمام التحديث: ${err.message || err}`);
+    }
+});
+
+/**
+ * 3. استلام الرسائل النصية المباشرة (إذا تم إرسال نص أسعار بدون صورة)
+ */
+bot.on('text', async (msg) => {
+    const text = msg.text;
+    const chatId = msg.chat.id;
+
+    if (text.startsWith('/start')) {
+        bot.sendMessage(
+            chatId, 
+            '🇸🇾 أهلاً بك في بوت أتمتة أسعار الصرف لسوق سوريا الشامل 2028.\n\n📸 أرسل صورة نشرة الأسعار من قناة (ALSRAFEN) وسيتم قراءتها وتحديث الأسعار لحظياً في التطبيق.'
+        );
+        return;
+    }
+
+    // فحص إذا كان النص يحتوي على أرقام أسعار
+    const parsedRates = parseRates(text);
+    if (parsedRates.length > 0) {
+        const rowsToInsert = parsedRates.map(r => ({
+            currency_name: r.currency_name,
+            buy_price: r.buy_price,
+            sell_price: r.sell_price,
+            raw_text: text,
+            image_url: null
+        }));
+
+        await supabase.from('exchange_rates').insert(rowsToInsert);
+        bot.sendMessage(chatId, '✅ تم تحديث الأسعار من الرسالة النصية بنجاح!');
+    }
+});
