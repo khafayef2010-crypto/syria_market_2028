@@ -7347,14 +7347,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     return Scaffold(
       backgroundColor: _manager.scaffoldBgColor,
       body: SafeArea(
-        // تم الإصلاح الجذري هنا لتعمل الواجهة بكامل عناصرها بدلاً من الشاشة البيضاء!
-        child: _currentNavIndex == 0
-            ? _buildHomeFeedTab()
-            : _currentNavIndex == 1
-                ? _buildCategoriesHorizontalBarWithFeed()
-                : _currentNavIndex == 2
-                    ? _buildFavoritesTab()
-                    : _buildProfileTab(),
+        child: _currentNavIndex == 2
+            ? _buildFavoritesTab()
+            : _currentNavIndex == 3
+                ? _buildProfileTab()
+                : const Center(child: Text('سوق سوريا الشامل')),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentNavIndex,
@@ -7370,17 +7367,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'حسابي'),
         ],
       ),
-    );
-  }
-
-  // ودجت مخصصة لتبويب الأقسام تعرض الأقسام وتحتها الإعلانات والأسعار
-  Widget _buildCategoriesHorizontalBarWithFeed() {
-    return Column(
-      children: [
-        _buildCategoriesHorizontalBar(),
-        const Divider(height: 1),
-        Expanded(child: _buildHomeFeedTab()),
-      ],
     );
   }
 
@@ -7440,46 +7426,30 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     WidgetsBinding.instance.addObserver(this);
     _manager.addListener(_onStateChange);
 
-    _gridScrollController.addListener(_onScrollListener);
-
-    // تحميل الجلسة محلياً بسرعة البرق
+    _manager.loadCachedDataOffline();
     _manager.loadPersistedSession();
+    _manager.initRealtimeListeners();
 
-    // تشغيل الاتصال والتحميل بعد ظهور الشاشة الأولى فوراً لمنع التعليق
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startTickerAnimation();
-      _startBannerCarouselTimer();
-      _manager.loadCachedDataOffline();
-      _initLiveAdsFromSupabase();
-      _fetchUserFavorites();
-      _fetchUserChats();
-    });
+    _initLiveAdsFromSupabase();
+    _fetchUserFavorites();
+    _fetchUserChats();
+    _startTickerAnimation();
+    _startBannerCarouselTimer();
+
+    _gridScrollController.addListener(_onScrollListener);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _manager.removeListener(_onStateChange);
-
-    try {
-      _gridScrollController.removeListener(_onScrollListener);
-      _gridScrollController.dispose();
-    } catch (_) {}
-
-    try {
-      _tickerTimer?.cancel();
-      _tickerScrollController.dispose();
-    } catch (_) {}
-
-    try {
-      _bannerAutoScrollTimer?.cancel();
-      _bannerCarouselController.dispose();
-    } catch (_) {}
-
-    try {
-      _searchController.dispose();
-    } catch (_) {}
-
+    _gridScrollController.removeListener(_onScrollListener);
+    _gridScrollController.dispose();
+    _tickerTimer?.cancel();
+    _tickerScrollController.dispose();
+    _bannerAutoScrollTimer?.cancel();
+    _bannerCarouselController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -7628,7 +7598,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     }
 
     try {
-      // 1. جلب أسعار الصرف والذهب الحية فوراً من السيرفر
+      // 1. جلب أسعار الصرف والذهب الحية فوراً من السيرفر وتحديثها على كل الأجهزة
       try {
         final ratesRes = await Supabase.instance.client
             .from('exchange_rates')
@@ -7673,7 +7643,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         _hasMoreAds = fetched.length >= _pageSize;
       }
 
-      // 3. جلب البانوراما الإعلانية الحية
+      // 3. جلب البانوراما الإعلانية الحية وتحديثها فوراً لجميع الأجهزة
       final bannerRes = await Supabase.instance.client
           .from('banners')
           .select()
@@ -7761,7 +7731,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (ctx) => const AuthScreen()),
+                MaterialPageRoute(builder: (ctx) => AuthScreen()),
               );
             },
           ),
@@ -7983,6 +7953,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       return;
     }
 
+    // 1. سؤال المسؤول: لأي قسم تريد رفع البانوراما؟ (اليمين أم اليسار)
     final int? selectedSlot = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -8024,6 +7995,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
 
     if (selectedSlot == null) return;
 
+    // 2. اختيار الصور من المعرض
     try {
       final pickedList = await _picker.pickMultiImage(
         imageQuality: 75,
@@ -8039,6 +8011,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         bytesList.add(b);
       }
 
+      // رفع الصور لسيرفر التخزين
       final uploadedUrls = await StorageUploadService.uploadMultipleImageBytes(
         bucketName: 'banners',
         imagesBytesList: bytesList,
@@ -8057,7 +8030,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           location: _selectedGovernorate,
           phone: kAppOwnerPhone,
           whatsapp: kAppOwnerWhatsApp,
-          slot: selectedSlot,
+          slot: selectedSlot, // هنا تم تثبيت القسم المستقل (1 أو 2)
           badgeText: selectedSlot == 1 ? 'VIP ★' : 'معتمد 100%',
           badgeColor: selectedSlot == 1
               ? _manager.secondaryColor
@@ -8066,11 +8039,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           expiresAt: DateTime.now().add(const Duration(days: 30)),
         );
 
+        // حفظ محلي وسحابي مباشر في Supabase
         setState(() {
           _manager.banners.insert(0, newBanner);
         });
         _manager.saveBannersToOfflineCache(_manager.banners);
 
+        // إرسال مباشر لسيرفر Supabase لكي تظهر لجميع الناس في نفس اللحظة
         try {
           await Supabase.instance.client
               .from('banners')
@@ -8193,10 +8168,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                 onTap: () {
                   Navigator.pop(ctx);
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (c) => const AppFeedbackScreen()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (c) => AppFeedbackScreen()));
                 },
               ),
             ],
@@ -8387,6 +8360,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
+          // 1. زر دليل المكاتب العقارية بالمحافظات
           _buildQuickServiceButton(
             icon: Icons.real_estate_agent,
             label: 'المكاتب العقارية',
@@ -8399,6 +8373,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               );
             },
           ),
+          // 2. زر جميع الأقسام (لعرض كل شجرة الأقسام بدون زحمة)
           _buildQuickServiceButton(
             icon: Icons.grid_view_rounded,
             label: 'جميع الأقسام',
@@ -8407,6 +8382,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               _showAllCategoriesBottomSheet();
             },
           ),
+          // 3. زر المزادات العلنية المباشرة
           _buildQuickServiceButton(
             icon: Icons.gavel,
             label: 'المزادات الحية',
@@ -8425,6 +8401,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               );
             },
           ),
+          // 4. زر إعادة ضبط وعرض كل الإعلانات الحديثة
           _buildQuickServiceButton(
             icon: Icons.all_inclusive,
             label: 'كل المنشورات',
@@ -8483,6 +8460,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
+  // ورقة عرض جميع الأقسام بشكل منظم وأنيق بدون تكدس في الرئيسية
   void _showAllCategoriesBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -8698,7 +8676,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
               ),
             ],
           ),
-        ),
+        ), // ================= شريط الخدمات السريعة الفاخر بديل الزحمة =================
         _buildQuickAccessServicesBar(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -8862,6 +8840,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   Widget _buildRoyalBannersSection() {
     final targetGovernorate = _selectedGovernorate;
 
+    // بنرات القسم الأيمن فقط (slot 1)
     final rightSideBanners = _manager.banners.where((b) {
       final notExpired = !b.isExpired && b.isActive;
       final geoMatch = b.location == 'كل المحافظات' ||
@@ -8870,6 +8849,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       return notExpired && geoMatch && b.slot == 1;
     }).toList();
 
+    // بنرات القسم الأيسر فقط (slot 2)
     final leftSideBanners = _manager.banners.where((b) {
       final notExpired = !b.isExpired && b.isActive;
       final geoMatch = b.location == 'كل المحافظات' ||
@@ -8878,7 +8858,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       return notExpired && geoMatch && b.slot == 2;
     }).toList();
 
+    // ================= 1. وضع الدمج الكامل VIP (دمج كل صور القسمين وراء بعضهما) =================
     if (_manager.bannerDisplayMode == BannerDisplayLayoutMode.fullPanorama) {
+      // جمع كل البنرات الفعالة من القسمين معاً
       final activeBanners = _manager.banners.where((b) {
         final notExpired = !b.isExpired && b.isActive;
         final geoMatch = b.location == 'كل المحافظات' ||
@@ -8887,6 +8869,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         return notExpired && geoMatch;
       }).toList();
 
+      // دمج كل صور القسمين في قائمة واحدة لتتقلب وراء بعضها
       final List<Map<String, dynamic>> combinedSlideList = [];
       for (var b in activeBanners) {
         if (b.imageUrls.isNotEmpty) {
@@ -8924,11 +8907,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       );
     }
 
+    // ================= 2. وضع المربعين المنفصلين (كل قسم معزول بصوره لحال) =================
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       height: 105,
       child: Row(
         children: [
+          // القسم الأيمن المعزول (Slot 1)
           Expanded(
             child: rightSideBanners.isNotEmpty
                 ? PageView.builder(
@@ -8943,6 +8928,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                   ),
           ),
           const SizedBox(width: 8),
+          // القسم الأيسر المعزول (Slot 2)
           Expanded(
             child: leftSideBanners.isNotEmpty
                 ? PageView.builder(
@@ -8961,6 +8947,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
+  // كرت عرض البانوراما مع دعم عرض الصورة المحددة في وضع الدمج
   Widget _buildActiveBannerCard(BannerItem banner,
       {String? specificImage, bool isPanorama = false}) {
     final displayImg = (specificImage != null && specificImage.isNotEmpty)
@@ -14095,7 +14082,6 @@ class ModeratorPermissionModel {
     );
   }
 }
-
 class AdminModeratorsControlSection extends StatefulWidget {
   const AdminModeratorsControlSection({Key? key}) : super(key: key);
 
@@ -14511,6 +14497,71 @@ class _AdminModeratorsControlSectionState
             onChanged: onChanged,
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ==============================================================================
+// 24. نقطة الانطلاق والتشغيل السريعة للتطبيق (Main App Entry Point)
+// مجهزة للإقلاع الفوري في ثانية واحدة بدون تعليق على شاشة اللوجو نهائياً
+// ==============================================================================
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 1. فتح وتشغيل واجهة التطبيق فوراً لكسر التجمد في ثانية واحدة
+  runApp(const SouqSyriaApp());
+
+  // 2. تهيئة الاتصال بالسيرفر في الخلفية بسلاسة
+  Future.microtask(() async {
+    try {
+      await Supabase.initialize(
+        url: kSupabaseUrl,
+        anonKey: kSupabaseAnonKey,
+      ).timeout(const Duration(seconds: 8));
+      debugPrint('✅ Supabase Initialized successfully in background');
+    } catch (e) {
+      debugPrint('⚠️ Supabase Background Init: $e');
+    }
+  });
+}
+
+class SouqSyriaApp extends StatefulWidget {
+  const SouqSyriaApp({Key? key}) : super(key: key);
+
+  @override
+  State<SouqSyriaApp> createState() => _SouqSyriaAppState();
+}
+
+class _SouqSyriaAppState extends State<SouqSyriaApp> {
+  bool _isDarkMode = false;
+
+  void _toggleTheme() {
+    setState(() {
+      _isDarkMode = !_isDarkMode;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'سوق سوريا الشامل 2028',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+        colorSchemeSeed: const Color(0xFF0F172A),
+        fontFamily: 'sans-serif',
+      ),
+      builder: (context, child) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: child!,
+        );
+      },
+      home: MainDashboardScreen(
+        isDarkMode: _isDarkMode,
+        onToggleTheme: _toggleTheme,
       ),
     );
   }
