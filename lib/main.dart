@@ -11047,6 +11047,10 @@ class FullChatNegotiationScreen extends StatefulWidget {
   State<FullChatNegotiationScreen> createState() =>
       _FullChatNegotiationScreenState();
 }
+  @override
+  State<FullChatNegotiationScreen> createState() =>
+      _FullChatNegotiationScreenState();
+}
 
 class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
   final AppStateManager _manager = AppStateManager();
@@ -14495,9 +14499,17 @@ class SouqSyriaApp extends StatefulWidget {
   @override
   State<SouqSyriaApp> createState() => _SouqSyriaAppState();
 }
+class SouqSyriaApp extends StatefulWidget {
+  const SouqSyriaApp({Key? key}) : super(key: key);
+
+  @override
+  State<SouqSyriaApp> createState() => _SouqSyriaAppState();
+}
 
 class _SouqSyriaAppState extends State<SouqSyriaApp> {
+  int _currentNavIndex = 0;
   bool _isDarkMode = false;
+  final AppStateManager _manager = AppStateManager();
 
   void _toggleTheme() {
     setState(() {
@@ -14507,25 +14519,47 @@ class _SouqSyriaAppState extends State<SouqSyriaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'سوق سوريا الشامل 2028',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: _isDarkMode ? Brightness.dark : Brightness.light,
-        colorSchemeSeed: const Color(0xFF0F172A),
-        fontFamily: 'sans-serif',
+    return Scaffold(
+      backgroundColor: _manager.scaffoldBgColor,
+      body: SafeArea(
+        child: _currentNavIndex == 0
+            ? _buildHomeFeedTab()
+            : _currentNavIndex == 1
+                ? _buildCategoriesHorizontalBar()
+                : _currentNavIndex == 2
+                    ? _buildFavoritesTab()
+                    : _buildProfileTab(),
       ),
-      builder: (context, child) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: child!,
-        );
-      },
-      home: MainDashboardScreen(
-        isDarkMode: _isDarkMode,
-        onToggleTheme: _toggleTheme,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentNavIndex,
+        onTap: (i) => setState(() => _currentNavIndex = i),
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: _manager.appBarColor,
+        selectedItemColor: _manager.secondaryColor,
+        unselectedItemColor: Colors.white60,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
+          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'الأقسام'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'المفضلة'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'حسابي'),
+        ],
       ),
     );
+  }
+
+  Widget _buildHomeFeedTab() {
+    return const Center(child: Text('الرئيسية والإعلانات والبانوراما'));
+  }
+
+  Widget _buildCategoriesHorizontalBar() {
+    return const Center(child: Text('الأقسام'));
+  }
+
+  Widget _buildFavoritesTab() {
+    return const Center(child: Text('المفضلة'));
+  }
+
+  Widget _buildProfileTab() {
+    return const Center(child: Text('حسابي'));
   }
 }
