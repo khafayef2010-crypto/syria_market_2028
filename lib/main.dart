@@ -10034,7 +10034,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   }
 }
 // ==============================================================================
-// 🌟 سوق سوريا الشامل 2027 - المنظومة السيادية الحقيقية المتكاملة 100%
+// 🌟 سوق سوريا الشامل 2028 - المنظومة السيادية الحقيقية المتكاملة 100%
 // [الدفعة 4 من أصل 4: شاشة إضافة الإعلان، غرف المحادثة، باقات الاشتراك، غرفة العمليات، و main()]
 // مربوطة بالكامل بالسيرفر الحقيقي وقواعد البيانات الحقيقية دون أي اختصار
 // ==============================================================================
@@ -10225,6 +10225,11 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold)),
             onPressed: () {
               Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (c) => const SubscriptionPlansScreen()),
+              );
             },
           ),
         ],
@@ -10245,13 +10250,13 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
     final bool isAllowed = _canUseSocialLink(linkType);
 
     return Opacity(
-      opacity: isAllowed ? 1.0 : 0.45, // شبه شفاف إذا كانت الباقة مجانية
+      opacity: isAllowed ? 1.0 : 0.45,
       child: Stack(
         alignment: Alignment.centerLeft,
         children: [
           TextFormField(
             controller: controller,
-            readOnly: !isAllowed, // غير قابل للكتابة للمجاني
+            readOnly: !isAllowed,
             onTap: () {
               if (!isAllowed) {
                 _showUpgradeSocialDialog(label, requiredPlanName);
@@ -10323,7 +10328,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
     );
   }
 
-  // قسم عرض حقول الروابط الخمسة بشكل مرتب وأنيق
   Widget _buildSocialMediaLinksSection() {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -10356,8 +10360,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
             style: TextStyle(color: Colors.grey, fontSize: 10.5),
           ),
           const SizedBox(height: 12),
-
-          // 1. رابط يوتيوب (باقة VIP)
           _buildLockedSocialField(
             controller: _youtubeUrlController,
             label: 'رابط فيديو يوتيوب (YouTube)',
@@ -10368,8 +10370,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
             requiredPlanName: 'باقة VIP الشاملة',
           ),
           const SizedBox(height: 8),
-
-          // 2. رابط فيسبوك (باقة Pro أو VIP)
           _buildLockedSocialField(
             controller: _facebookUrlController,
             label: 'رابط صفحة أو حساب فيسبوك (Facebook)',
@@ -10380,8 +10380,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
             requiredPlanName: 'باقة التجار Pro أو VIP',
           ),
           const SizedBox(height: 8),
-
-          // 3. رابط إنستغرام (باقة Pro أو VIP)
           _buildLockedSocialField(
             controller: _instagramUrlController,
             label: 'رابط حساب إنستغرام (Instagram)',
@@ -10392,8 +10390,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
             requiredPlanName: 'باقة التجار Pro أو VIP',
           ),
           const SizedBox(height: 8),
-
-          // 4. رابط تليجرام (باقة VIP)
           _buildLockedSocialField(
             controller: _telegramUrlController,
             label: 'رابط قناة أو حساب تليجرام (Telegram)',
@@ -10404,8 +10400,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
             requiredPlanName: 'باقة VIP الشاملة',
           ),
           const SizedBox(height: 8),
-
-          // 5. رابط تيك توك (باقة VIP)
           _buildLockedSocialField(
             controller: _tiktokUrlController,
             label: 'رابط حساب تيك توك (TikTok)',
@@ -10421,7 +10415,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
   }
 
   Future<void> _pickImages() async {
-    // تحديد الحد الأقصى للصور بحسب باقة المستخدم بدون أخطاء
     int maxAllowed = 4;
     String planName = 'المجانية';
     if (_manager.isAdmin ||
@@ -10484,7 +10477,6 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
   Future<void> _submitAd() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // فحص الكلمات المحظورة محلياً بأمان تام وبدون أي أخطاء
     final textToCheck =
         '${_titleController.text} ${_descController.text}'.toLowerCase();
     const forbidden = ['مخدرات', 'سلاح', 'ممنوعات'];
@@ -10951,11 +10943,8 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
               ),
               const SizedBox(height: 12),
             ],
-
-            // ================= قسم روابط التواصل الاجتماعي وتضمين الفيديو (شفاف ومقفل للباقة المجانية) =================
             _buildSocialMediaLinksSection(),
             const SizedBox(height: 12),
-
             Row(
               children: [
                 Expanded(
@@ -11428,7 +11417,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
-        // 1. بطاقة شكل العرض العام وسرعة العرض
         Card(
           color: const Color(0xFF0F172A),
           shape:
@@ -11559,8 +11547,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
           ),
         ),
         const SizedBox(height: 14),
-
-        // 2. زر رفع بانوراما جديدة
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF0284C7),
@@ -11576,8 +11562,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
           onPressed: () => _showAddCustomBannerDialog(),
         ),
         const SizedBox(height: 16),
-
-        // 3. بنرات القسم الأيمن (Slot 1)
         Row(
           children: [
             const Icon(Icons.view_sidebar, size: 18, color: Color(0xFFD4AF37)),
@@ -11597,10 +11581,7 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
           )
         else
           ...rightBanners.map((b) => _buildBannerAdminItemCard(b)).toList(),
-
         const SizedBox(height: 14),
-
-        // 4. بنرات القسم الأيسر (Slot 2)
         Row(
           children: [
             const Icon(Icons.view_sidebar_outlined,
@@ -11625,7 +11606,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
     );
   }
 
-  // كرت عرض البانوراما المتجاوب تماماً وبدون أي أخطاء تجاوز أو أحمر (Overflow)
   Widget _buildBannerAdminItemCard(BannerItem b) {
     final remaining = b.expiresAt.difference(DateTime.now());
     final days = remaining.inDays;
@@ -11639,7 +11619,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
         padding: const EdgeInsets.all(8),
         child: Row(
           children: [
-            // صورة البنر
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: SizedBox(
@@ -11649,7 +11628,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               ),
             ),
             const SizedBox(width: 10),
-            // تفاصيل البنر بشكل محمي ومرن 100%
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -11683,7 +11661,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                 ],
               ),
             ),
-            // زر الحذف
             IconButton(
               icon:
                   const Icon(Icons.delete_outline, color: Colors.red, size: 20),
@@ -12036,7 +12013,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
           ),
         ),
         const SizedBox(height: 12),
-        // بطاقة التحكم بوضع الصيانة والرسالة الإيمانية
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -12079,7 +12055,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
                   _manager.notifyListeners();
 
                   try {
-                    // إرسال فوري إلى سيرفر Supabase لجميع هواتف العالم
                     await Supabase.instance.client.from('app_settings').upsert([
                       {'key': 'maintenance_mode', 'value': val.toString()},
                       {
@@ -12429,7 +12404,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
   }
 
   Widget _buildRatesSettingsTab() {
-    // المتحكمات الإضافية للتركي والبيع والشراء واسم الصراف
     final usdBuyCtrl = TextEditingController(
         text: _usdRateController.text.isNotEmpty
             ? _usdRateController.text
@@ -12451,7 +12425,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
-          // رأس الإدارة
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -12487,8 +12460,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
             ),
           ),
           const SizedBox(height: 14),
-
-          // 1. قسم الصراف الراعي
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -12531,8 +12502,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
             ),
           ),
           const SizedBox(height: 14),
-
-          // 2. أسعار الدولار مقابل السوري (شراء ومبيع)
           const Text('1. الدولار الأمريكي مقابل السوري (USD/SYP):',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           const SizedBox(height: 6),
@@ -12562,8 +12531,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
             ],
           ),
           const SizedBox(height: 12),
-
-          // 3. أسعار الليرة التركية مقابل السوري (شراء ومبيع)
           const Text('2. الليرة التركية مقابل السوري (TRY/SYP):',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           const SizedBox(height: 6),
@@ -12593,8 +12560,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
             ],
           ),
           const SizedBox(height: 12),
-
-          // 4. أسعار الذهب عيار 21 (بالسوري والدولار)
           const Text('3. غرام الذهب عيار 21:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           const SizedBox(height: 6),
@@ -12624,8 +12589,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
             ],
           ),
           const SizedBox(height: 20),
-
-          // زر الحفظ والنشر الفوري
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0F172A),
@@ -12645,7 +12608,6 @@ class _FullAdminPanelScreenState extends State<FullAdminPanelScreen>
               final sponsorName = sponsorNameCtrl.text.trim();
 
               try {
-                // إرسال ومزامنة فورية لكل الهواتف عبر جدول exchange_rates
                 await Supabase.instance.client.from('exchange_rates').upsert({
                   'id': 'current_rates',
                   'usd_rate': usdBuy,
@@ -13347,7 +13309,6 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
     } catch (_) {}
   }
 
-  // دالة نافذة إضافة وتوثيق مكتب عقاري جديد (خاصة بالإدارة فقط)
   void _showAddOfficeDialog() {
     final nameCtrl = TextEditingController();
     final ownerCtrl = TextEditingController();
@@ -14038,6 +13999,7 @@ class _RealEstateDirectoryScreenState extends State<RealEstateDirectoryScreen> {
     );
   }
 }
+
 // ==============================================================================
 // غرفة مفاتيح صلاحيات المشرفين المركزية للمسؤول العام (ModeratorsPermissionsPanel)
 // ==============================================================================
@@ -14082,6 +14044,7 @@ class ModeratorPermissionModel {
     );
   }
 }
+
 class AdminModeratorsControlSection extends StatefulWidget {
   const AdminModeratorsControlSection({Key? key}) : super(key: key);
 
@@ -14504,15 +14467,15 @@ class _AdminModeratorsControlSectionState
 
 // ==============================================================================
 // 24. نقطة الانطلاق والتشغيل السريعة للتطبيق (Main App Entry Point)
-// مجهزة للإقلاع الفوري في ثانية واحدة بدون تعليق على شاشة اللوجو نهائياً
+// تفتح الصفحة الرئيسية مباشرة بدون تعليق نهائياً
 // ==============================================================================
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. فتح وتشغيل واجهة التطبيق فوراً لكسر التجمد في ثانية واحدة
+  // إقلاع فوري للتطبيق وفتح الشاشة الرئيسية مباشرة لكسر أي شاشة بيضاء أو تعليق
   runApp(const SouqSyriaApp());
 
-  // 2. تهيئة الاتصال بالسيرفر في الخلفية بسلاسة
+  // تهيئة Supabase في الخلفية لضمان سرعة الإقلاع على جميع الشبكات
   Future.microtask(() async {
     try {
       await Supabase.initialize(
