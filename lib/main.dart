@@ -10578,29 +10578,29 @@ class _FullAddAdScreenState extends State<FullAddAdScreen> {
         widget.onAdCreated(savedAd);
       }
 
-      if (mounted) {
-        setState(() => _isUploading = false);
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ تم نشر إعلانك بنجاح مع روابط التواصل!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Save Ad Supabase Error: $e');
-      if (mounted) {
-        setState(() => _isUploading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('⚠️ تعذر الحفظ بالسيرفر: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+if (mounted) {
+          setState(() => _isUploading = false);
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ تم نشر إعلانك بنجاح مع روابط التواصل!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Save Ad Supabase Error: $e');
+        if (mounted) {
+          setState(() => _isUploading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('⚠️ تعذر الحفظ بالسيرفر: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -11043,6 +11043,23 @@ class FullChatNegotiationScreen extends StatefulWidget {
     required this.initialPrice,
   }) : super(key: key);
 
+  @override
+  State<FullChatNegotiationScreen> createState() => _FullChatNegotiationScreenState();
+}
+
+class _FullChatNegotiationScreenState extends State<FullChatNegotiationScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('محادثة: ${widget.partnerName}'),
+      ),
+      body: Center(
+        child: Text('غرفة التفاوض حول: ${widget.productTitle}'),
+      ),
+    );
+  }
+}
   @override
   State<FullChatNegotiationScreen> createState() =>
       _FullChatNegotiationScreenState();
